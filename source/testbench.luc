@@ -19,7 +19,7 @@ global Test{
   const OR = 6b011110;
   const XOR = 6b010110;
   const AO = 6b011010;
-  const BO = 6b010101;
+  const BO = 6b011100;
   const XNOR = 6b011001;
   const NAND = 6b010111;
   const NOR = 6b010001;
@@ -61,6 +61,7 @@ module testbench (
     input clk,  // clock
     input rst,  // reset
     input test,
+    input wrong,
     output io_led[3][8],
     output true
   ) {
@@ -81,6 +82,7 @@ module testbench (
     alur.a = Test.ASMALLP;
     alur.b = Test.BSMALLP;
     alur.alufn = Test.ADD;
+    alur.wrong = wrong;
     io_led = 3x{{8h00}};
     if(test == 1){
     case(state.q){

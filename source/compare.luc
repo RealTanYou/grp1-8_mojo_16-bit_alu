@@ -15,9 +15,9 @@
    both n and v finds out if a < b. This is how it finds out:
    
    If a and b are positive numbers and a < b, when a - b is executed, the result
-   is a negative number, without any overfow. thus, n must be true while v must be false.
+   is a negative number, without any overflow. thus, n must be true while v must be false.
    
-   if a is a negative number and b is a postive number, to situations can happen:
+   if a is a negative number and b is a postive number, two situations can happen:
      if both a and b are relativly small values, when a - b occur, it is the same as
      the above case.
      However, if a and b are large in value, when a - b occure, the results overflows
@@ -29,6 +29,7 @@ module compare (
     input z,
     input v,
     input n,
+    input wrong,
     input alufn[2],
     output comp[16]
   ) {
@@ -37,7 +38,7 @@ module compare (
     comp = 16b0;
     case(alufn){
       2b00: comp[0] = 0;
-      2b01: comp[0] = z; // a == b
+      2b01: comp[0] = (!wrong)? z: !z; // a == b
       2b10: comp[0] = n ^ v; // a < b
       2b11: comp[0] = z | (n ^ v); //a <= b
       default: comp[0] = 0;
