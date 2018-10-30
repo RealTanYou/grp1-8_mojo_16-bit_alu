@@ -31,7 +31,7 @@ module boolean (
       4b1110: boole = a | b;//or
       4b0110: boole = a ^ b;//xor
       4b1010: boole = a;//a only
-      4b0101: boole = b;//b only
+      4b1100: boole = b;//b only
       4b1001: boole = a ~^b;//xnor
       4b0111: boole = ~(a&b);//nand
       4b0001: boole = ~(a|b);//nor
