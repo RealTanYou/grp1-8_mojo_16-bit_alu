@@ -40,11 +40,9 @@ module mojo_top (
     alur.a = aReg.q;
     alur.b = bReg.q;
     alur.alufn = opcode.q;
-    alur.wrong = io_dip[2][6];
     test.clk = tim.true;
     test.rst = rst;
     test.test = io_dip[2][7];
-    test.wrong = io_dip[2][6];
     case(state.q){
       state.GETA:
         aReg.d[7:0] = io_dip[0];
