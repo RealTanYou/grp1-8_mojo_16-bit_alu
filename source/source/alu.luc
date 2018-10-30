@@ -1,0 +1,58 @@
+/**
+This alu combines all other modules into it: add, bool, comp. shift and mul.
+   it also selects the operation depending on the value of alufn
+**/
+module alu (
+    input a[16],
+    input b[16],
+    input alufn[6],
+    output alu[16],
+    output z,
+    output v,
+    output n
+  ) {
+  //initialise all required modules for the alu
+  adder add;
+  boolean bool;
+  compare comp;
+  shifter shift;
+  multiply mul;
+  always {
+    alu = 16h0000;
+    z = 0;
+    v = 0;
+    n = 0;
+    
+    add.a = a;
+    add.b = b;
+    add.alufn0 = alufn[0];
+    z = add.z;
+    v = add.v;
+    n = add.n;
+    
+    mul.a = a;
+    mul.b = b;
+    mul.alufn0 = alufn[0];
+    
+    bool.a = a;
+    bool.b = b;
+    bool.alufn = alufn[3:0];
+    
+    shift.a = a;
+    shift.b = b[3:0];
+    shift.alufn = alufn[1:0];
+    
+    comp.z = add.z;
+    comp.v = add.v;
+    comp.n = add.n;
+    comp.alufn = alufn[2:1];
+    
+    case(alufn[5:4]){
+      2b00: alu = (alufn[1] == 0)? add.s : mul.p;
+      2b01: alu = bool.boole;
+      2b10: alu = shift.shift;
+      2b11: alu = comp.comp;
+      default: alu = 16h0000;
+      }
+  }
+}

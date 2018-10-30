@@ -1,0 +1,41 @@
+/**
+Given 2 16-bit values, excecute boolean operations on them e.g. and, or, xor etc.
+returns the restle in boole.
+**/
+module boolean (
+    input a[16],
+    input b[16],
+    input alufn[4],
+    output boole[16]
+  ) {
+
+  always {
+    boole = 16h0000;
+    /*the value of alufn will determine which kind of boolean operation to do.
+      This is the values of alufn are treated as the output of a and b.
+      To explain, imagine if an AND operation is done on a and b.
+      The truth table will be as follows:
+         |a |b |s|
+         |0 |0 |0|
+         |0 |1 |0|
+         |1 |0 |0|
+         |1 |1 |1|
+       Notcing the output s, if we set our values of alufn[3:0] to be the same
+       as the output s, we can select "AND" using 32 4-way mulitplexers.
+       
+       In MOJO, an simple &, |, ^ or ~ is done here instead.
+       */
+    case(alufn){
+      4b0000: boole = 16h0000;//nothing
+      4b1000: boole = a & b;//and
+      4b1110: boole = a | b;//or
+      4b0110: boole = a ^ b;//xor
+      4b1010: boole = a;//a only
+      4b0101: boole = b;//b only
+      4b1001: boole = a ~^b;//xnor
+      4b0111: boole = ~(a&b);//nand
+      4b0001: boole = ~(a|b);//nor
+      default: boole = 16h0000;
+    }
+  }
+}

@@ -1,0 +1,12 @@
+module timer (
+    input clk,  // clock
+    input rst,  // reset
+    output true
+  ) {
+  const SIZE = 26;
+  dff counter[SIZE](.clk(clk),.rst(rst));
+  always {
+    true = counter.q[SIZE-1];
+    counter.d = counter.q + 1;
+  }
+}

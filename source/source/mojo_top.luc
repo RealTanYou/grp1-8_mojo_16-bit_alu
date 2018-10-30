@@ -1,0 +1,101 @@
+module mojo_top (
+    input clk,              // 50MHz clock
+    input rst_n,            // reset button (active low)
+    //the io shield has 24 dip switches, so it is used for the opcode, a and b.
+    //the io_led is used to display the a, b and the result as well.
+    output io_led[3][8],
+    input io_dip[3][8],
+    //the buttons are used to choose between states in the fsm.
+    //button[0] is the 'top' button on the io shield
+    //button[1] is the 'midddle' button
+    //button[2] is the 'botton' button
+    //button[3] is the 'left' button
+    //button[4] is the 'right' button
+    input io_button[5]
+) {
+  
+  sig rst;                  // reset signal
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    reset_conditioner reset_cond;
+    .rst(rst){
+      //make some registers to hold the values of a, b and opcode.
+      timer tim;
+      dff aReg[16];
+      dff bReg[16];
+      dff opcode[6];
+      fsm state(#INIT(GETA), .clk(clk), .rst(rst)) = {GETA, GETB, RESULT, TEST};
+      }
+  }
+  
+  alu alur;
+  testbench test;
+  always {
+    reset_cond.in = ~rst_n; // input raw inverted reset signal
+    rst = reset_cond.out;   // conditioned reset
+
+    io_led = 3x{{8h00}};    
+    alur.a = aReg.q;
+    alur.b = bReg.q;
+    alur.alufn = opcode.q;
+    test.clk = tim.true;
+    test.rst = rst;
+    test.test = io_dip[2][7];
+    case(state.q){
+      state.GETA:
+        aReg.d[7:0] = io_dip[0];
+        aReg.d[15:8] = io_dip[1];
+        io_led = io_dip;
+        if (io_button[0]){
+          state.d = state.GETB;
+          }
+        if (io_button[3]){
+          state.d = state.TEST;
+        }
+      state.GETB:
+        bReg.d[7:0] = io_dip[0];
+        bReg.d[15:8] = io_dip[1];
+        io_led = io_dip;
+        if (io_button[1]){
+          state.d = state.RESULT;
+          }
+        if (io_button[3]){
+          state.d = state.TEST;
+        }
+      state.RESULT:
+        opcode.d = io_dip[2][5:0];
+        io_led[2] = 8h00;
+        io_led[1] = alur.alu[15:8];
+        io_led[0] = alur.alu[7:0];
+        if (io_button[2]){
+          state.d = state.GETA;
+          io_led = 3x{{8h00}};
+          alur.a = aReg.q;
+          alur.b = bReg.q;
+          alur.alufn = opcode.q;
+        }
+        if (io_button[3]){
+          state.d = state.TEST;
+        }
+      state.TEST:
+        //test.test = 1;
+        io_led[2][5:0] = test.io_led[2][5:0];
+        io_led[1] = test.io_led[1];
+        io_led[0] = test.io_led[0];
+        if(test.true){
+          io_led[0] = 8x{tim.true};
+          io_led[1] = 8x{tim.true};
+          io_led[2] = 8x{tim.true};
+          }
+        if(io_button[2]){
+          state.d = state.GETA;
+          io_led = 3x{{8h00}};
+          alur.a = aReg.q;
+          alur.b = bReg.q;
+          alur.alufn = opcode.q;
+        }
+      }
+  }
+}

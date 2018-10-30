@@ -1,0 +1,46 @@
+/*
+   Note: this compare unit requires the output of z, v and n of the adder unit
+   for this to function.
+   
+   This compare unit finds out if a == b, a < b or a <= b.
+   
+   This is done using z, v and n.
+   z is true if the output is 0. thus, if we were to take a - b in the adder
+   and the result is 0, z will be true and thus a == b.
+   
+   n is true if the most significant bit of n is 1, otherwise it is false
+   
+   v is true if the addition or subtraction of a and b results in overflow.
+   
+   both n and v finds out if a < b. This is how it finds out:
+   
+   If a and b are positive numbers and a < b, when a - b is executed, the result
+   is a negative number, without any overfow. thus, n must be true while v must be false.
+   
+   if a is a negative number and b is a postive number, to situations can happen:
+     if both a and b are relativly small values, when a - b occur, it is the same as
+     the above case.
+     However, if a and b are large in value, when a - b occure, the results overflows
+     and the number becomes postive. In this case, n must be false while v must be true.
+   
+   if a and b are negative and a < b, the outcome are the same as the above case.
+*/
+module compare (
+    input z,
+    input v,
+    input n,
+    input alufn[2],
+    output comp[16]
+  ) {
+
+  always {
+    comp = 16b0;
+    case(alufn){
+      2b00: comp[0] = 0;
+      2b01: comp[0] = z; // a == b
+      2b10: comp[0] = n ^ v; // a < b
+      2b11: comp[0] = z | (n ^ v); //a <= b
+      default: comp[0] = 0;
+      }
+  }
+}

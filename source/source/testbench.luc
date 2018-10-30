@@ -1,0 +1,342 @@
+global Test{
+  //fixed values to be tested
+  const ASMALLP = 16h0010;//decimal 16
+  const BSMALLP = 16h0011;//decimal 17
+  const ALARGEP = 16h6fe0;//decimal 28640
+  const BLARGEP = 16h7ff1;//decimal 32753
+  const ASMALLN = 16hffe0;//decimal -32
+  const BSMALLN = 16hffd0;//decimal -48
+  const ALARGEN = 16h8123;//decimal -32477
+  const BLARGEN = 16h8456;//decimal -31658
+  const SHIFTVALUE = 16h0004;//shift by 4
+  
+  //all opcodes for all functions of ALU
+  const ADD = 6b000000;
+  const SUB = 6b000001;
+  const MUL = 6b000010;
+  const DIV = 6b000011;
+  const AND = 6b011000;
+  const OR = 6b011110;
+  const XOR = 6b010110;
+  const AO = 6b011010;
+  const BO = 6b010101;
+  const XNOR = 6b011001;
+  const NAND = 6b010111;
+  const NOR = 6b010001;
+  const CMPEQ = 6b110011;
+  const CMPLT = 6b110101;
+  const CMPLE = 6b110111;
+  const SHL = 6b100000;
+  const SHR = 6b100001;
+  const SRA = 6b100011;
+  
+  //the true values of each instruction if the alu works correctly.
+  const ADDST = 16h0021;//ASMALLP + BSMALLP = 33
+  const ADDLT = 16hefd1;//ALARGEP + BLARGEP = 61393, overflow to -4143 if signed
+  const SUBST = 16hffff;//ASMALLP - BSMALLP = -1
+  const SUBLT = 16h0132;//ALARGEN - BLARGEP = -65230, overflow back to 306
+  const MULST = 16h0110;//ASMALLP * BSMALLP = 272
+  const MULLT = 16h71e0;//ALARGEP * BLARGEP = 938045920, so only last 16 bits are shown
+  const DIVST = 16h0000;//ASMALLP / BSMALLP 0 remainder 16
+  const DIVLT = 16h0694;//ALARGEP / BSMALLP 1684 remainder 12
+  const ANDT = 16h0010;//ASMALLP & BSMALLP
+  const ORT = 16h0011;//ASMALLP | BSMALLP
+  const XORT = 16h0001;//ASMALLP ^ BSMALLP
+  const AOT = 16h0010;//ASMALLP
+  const BOT = 16h0011;//BSMALLP
+  const XNORT = 16hfffe;//~(ASMALLP ^ BSMALLP)
+  const NANDT = 16hffef;//~(ASMALLP & BSMALLP)
+  const NORT = 16hffee;//~(ASMALLP | BSMALLP)
+  const CMPEQTP = 16h0001;//ASMALLP == ASMALLP = true
+  const CMPLTTP = 16h0001;//ASMALLP < BSMALLP = true
+  const CMPLETP = 16h0001;//ASMALLP <= BSMALLP = true
+  const CMPEQTN = 16h0000;//ASMALLP == BSMALLP = false
+  const CMPLTTN = 16h0000;//ASMALLN < BSMALLN = false
+  const CMPLETN = 16h0000;//ASMALLN <= BSMALLN = false
+  const SHLT = 16h0100;//ASMALLP shift left
+  const SHRT = 16h0001;//ASMALLP shift right
+  const SRAT = 16hfffe;//ASMALLN shift right with signed
+}
+module testbench (
+    input clk,  // clock
+    input rst,  // reset
+    input test,
+    output io_led[3][8],
+    output true
+  ) {
+  .clk(clk){
+    .rst(rst){
+      fsm state(#INIT(TESTADDS)) = {
+        TESTADDS, TESTSUBS, TESTMULS, TESTDIVS, TESTADDL,TESTSUBL, TESTMULL, TESTDIVL,
+        TESTAND, TESTOR, TESTXOR, TESTAO, TESTBO, TESTXNOR, TESTNAND, TESTNOR,
+        TESTCMPEQP, TESTCMPLTP, TESTCMPLEP, TESTCMPEQN, TESTCMPLTN, TESTCMPLEN,
+        TESTSHL, TESTSHR, TESTSRA, ALLTRUE};
+    }
+  }
+  var blink;
+  alu alur;
+  always {
+    blink = 0;
+    true = 0;
+    alur.a = Test.ASMALLP;
+    alur.b = Test.BSMALLP;
+    alur.alufn = Test.ADD;
+    io_led = 3x{{8h00}};
+    if(test == 1){
+    case(state.q){
+        state.TESTADDS:
+          alur.alufn = Test.ADD;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.ADD;
+          if (alur.alu == Test.ADDST){
+            state.d = state.TESTADDL;
+            }
+        state.TESTADDL:
+          alur.alufn = Test.ADD;
+          alur.a = Test.ALARGEP;
+          alur.b = Test.BLARGEP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.ADD;
+          if (alur.alu == Test.ADDLT){
+            state.d = state.TESTSUBS;
+            }
+        state.TESTSUBS:
+          alur.alufn = Test.SUB;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.SUB;
+          if (alur.alu == Test.SUBST){
+            state.d = state.TESTSUBL;
+            }
+        state.TESTSUBL:
+          alur.alufn = Test.SUB;
+          alur.a = Test.ALARGEN;
+          alur.b = Test.BLARGEP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.SUB;
+          if (alur.alu == Test.SUBLT){
+            state.d = state.TESTMULS;
+            }
+        state.TESTMULS:
+          alur.alufn = Test.MUL;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.MUL;
+          if (alur.alu == Test.MULST){
+            state.d = state.TESTMULL;
+            }
+        state.TESTMULL:
+          alur.alufn = Test.MUL;
+          alur.a = Test.ALARGEP;
+          alur.b = Test.BLARGEP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.MUL;
+          if (alur.alu == Test.MULLT){
+            state.d = state.TESTDIVS;
+            }
+        state.TESTDIVS:
+          alur.alufn = Test.DIV;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.DIV;
+          if (alur.alu == Test.DIVST){
+            state.d = state.TESTDIVL;
+            }
+        state.TESTDIVL:
+          alur.alufn = Test.DIV;
+          alur.a = Test.ALARGEP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.DIV;
+          if (alur.alu == Test.DIVLT){
+            state.d = state.TESTAND;
+            }
+        state.TESTAND:
+          alur.alufn = Test.AND;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.AND;
+          if (alur.alu == Test.ANDT){
+            state.d = state.TESTOR;
+            }
+        state.TESTOR:
+          alur.alufn = Test.OR;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.OR;
+          if (alur.alu == Test.ORT){
+            state.d = state.TESTXOR;
+            }
+        state.TESTXOR:
+          alur.alufn = Test.XOR;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.XOR;
+          if (alur.alu == Test.XORT){
+            state.d = state.TESTAO;
+            }
+        state.TESTAO:
+          alur.alufn = Test.AO;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.AO;
+          if (alur.alu == Test.AOT){
+            state.d = state.TESTBO;
+            }
+        state.TESTBO:
+          alur.alufn = Test.BO;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.BO;
+          if (alur.alu == Test.BOT){
+            state.d = state.TESTXNOR;
+            }
+        state.TESTXNOR:
+          alur.alufn = Test.XNOR;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.XNOR;
+          if (alur.alu == Test.XNORT){
+            state.d = state.TESTNAND;
+            }
+        state.TESTNAND:
+          alur.alufn = Test.NAND;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.NAND;
+          if (alur.alu == Test.NANDT){
+            state.d = state.TESTNOR;
+            }
+        state.TESTNOR:
+          alur.alufn = Test.NOR;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.NOR;
+          if (alur.alu == Test.NORT){
+            state.d = state.TESTCMPEQP;
+            }
+        state.TESTCMPEQP:
+          alur.alufn = Test.CMPEQ;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.ASMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.CMPEQ;
+          if (alur.alu == Test.CMPEQTP){
+            state.d = state.TESTCMPEQN;
+            }
+        state.TESTCMPEQN:
+          alur.alufn = Test.CMPEQ;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.CMPEQ;
+          if (alur.alu == Test.CMPEQTN){
+            state.d = state.TESTCMPLTP;
+            }
+        state.TESTCMPLTP:
+          alur.alufn = Test.CMPLT;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.CMPLT;
+          if (alur.alu == Test.CMPLTTP){
+            state.d = state.TESTCMPLTN;
+            }
+        state.TESTCMPLTN:
+          alur.alufn = Test.CMPLT;
+          alur.a = Test.ASMALLN;
+          alur.b = Test.BSMALLN;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.CMPLT;
+          if (alur.alu == Test.CMPLTTN){
+            state.d = state.TESTCMPLEP;
+            }
+        state.TESTCMPLEP:
+          alur.alufn = Test.CMPLE;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.BSMALLP;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.CMPLE;
+          if (alur.alu == Test.CMPLETP){
+            state.d = state.TESTCMPLEN;
+            }
+        state.TESTCMPLEN:
+          alur.alufn = Test.CMPLE;
+          alur.a = Test.ASMALLN;
+          alur.b = Test.BSMALLN;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.CMPLE;
+          if (alur.alu == Test.CMPLETN){
+            state.d = state.TESTSHL;
+            }
+        state.TESTSHL:
+          alur.alufn = Test.SHL;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.SHIFTVALUE;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.SHL;
+          if (alur.alu == Test.SHLT){
+            state.d = state.TESTSHR;
+            }
+        state.TESTSHR:
+          alur.alufn = Test.SHR;
+          alur.a = Test.ASMALLP;
+          alur.b = Test.SHIFTVALUE;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.SHR;
+          if (alur.alu == Test.SHRT){
+            state.d = state.TESTSRA;
+            }
+        state.TESTSRA:
+          alur.alufn = Test.SRA;
+          alur.a = Test.ASMALLN;
+          alur.b = Test.SHIFTVALUE;
+          io_led[0] = alur.alu[7:0];
+          io_led[1] = alur.alu[15:8];
+          io_led[2] = Test.SRA;
+          if (alur.alu == Test.SRAT){
+            state.d = state.ALLTRUE;
+            }
+        state.ALLTRUE:
+          true = 1;
+      }
+    }
+  }
+}

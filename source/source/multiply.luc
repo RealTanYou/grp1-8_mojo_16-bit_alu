@@ -1,0 +1,15 @@
+/**
+  Given a and b, multiple or divide them depending on the alufn0
+   **/
+module multiply (
+    input alufn0,
+    input a[16],
+    input b[16],
+    output p[16]
+  ) {
+
+  always {
+    p = 16h0000;
+    p = (alufn0 == 0)? a * b : a / b;
+  }
+}

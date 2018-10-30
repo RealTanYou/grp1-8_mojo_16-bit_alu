@@ -1,0 +1,21 @@
+/**
+  Given 16-bit number a and a 4-bit number b, shift a by however much the value of b is.
+   Shift left, right,or right signed depending on alufn
+   **/
+module shifter (
+    input a[16],
+    input b[4],
+    input alufn[2],
+    output shift[16]
+  ) {
+
+  always {
+    shift = 16h0000;
+    case(alufn){
+      2b00: shift = a << b;
+      2b01: shift = a >> b;
+      2b11: shift = $signed(a) >>> b;
+      default: shift = 16h0000;
+      }
+  }
+}
