@@ -1,0 +1,50 @@
+/**
+Given 2 16-bit values, add or subtract them depending on the input alufn0.
+Outputs the sum, z, v and n. z, v and n are used for the comparison unit.
+**/
+module adder (
+    //same inputs as the SW labs
+    input alufn0,
+    input a [16],
+    input b [16],
+    output s [16],
+    //outputs same, as required for comparison
+    output z,
+    output v,
+    output n
+    
+  ) {
+  //intermediate values for calculating z, v and n
+  sig xb [16];
+  sig out [16];
+  always {
+    //initialise to zero first.
+    xb = 16h0000;
+    s = 16h0000;
+    z = 0;
+    v = 0;
+    n = 0;
+    //make xb same as b or xor b, depending on alufn0
+    case(alufn0){      
+      1b0:xb = b;
+      1b1:xb = b^16hffff;
+      }
+    //if least sig bit is 0, do additon, otherwise to subtraction.
+    out = (alufn0 == 0) ? a + b : a - b;
+    
+    //z is 1 if output of sum is 0, otherwise it is 0
+    z = (out == 0) ? 1 : 0;
+    
+    //v is 1 if the addtion or subtraction of a and b results in overflow, otherwise it is 0
+    v = (a[15]&xb[15]&~out[15]) | (~a[15]&~xb[15]&out[15]);
+    
+    //n follows the most sig bit of the sum.
+    n = out[15];
+    
+    //finally, output is tied to sum
+    s = out;
+    
+    
+    
+  }
+}
